@@ -1,12 +1,13 @@
 extern crate clap;
 use clap::{App, Arg, SubCommand};
 
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 
 extern crate serde;
 extern crate serde_json;
 
 mod config;
+mod commands;
 
 #[macro_use]
 extern crate serde_derive;
@@ -49,7 +50,12 @@ fn main() {
         )
         .get_matches();
     let mut config: config::Config = match File::open(matches.value_of("file").unwrap()) {
-        Ok(file) => serde_json::from_reader(file).unwrap(),
+        Ok(file) => match serde_json::from_reader(file) {
+            Ok(value) => value,
+            Err(_) => config::Config {
+                ..Default::default()
+            },
+        },
         Err(_) => config::Config {
             ..Default::default()
         },
@@ -57,47 +63,20 @@ fn main() {
     println!("Config file readed: {:?}", &config);
 
     if let Some(ref matches) = matches.subcommand_matches("log") {
-        println!("Key: {}", matches.value_of("key").unwrap());
-        match matches.value_of("set") {
-            Some(value) => match matches.value_of("key").unwrap() {
-                "access" => {
-                    config.log = Some(config::Log {
-                        access: Some(String::from(value)),
-                        ..config.log.unwrap_or_default()
-                    })
-                }
-                "error" => {
-                    config.log = Some(config::Log {
-                        error: Some(String::from(value)),
-                        ..config.log.unwrap_or_default()
-                    })
-                }
-                "loglevel" => {
-                    config.log = Some(config::Log {
-                        error: Some(String::from(value)),
-                        ..config.log.unwrap_or_default()
-                    })
-                }
-                value => panic!("invalid key {}", value),
-            },
-            None => if matches.is_present("get") {
-                println!(
-                    "{} = {}",
-                    matches.value_of("key").unwrap(),
-                    match (&config).log {
-                        Some(log) => match matches.value_of("key").unwrap() {
-                            "access" => log.access.unwrap_or(String::from("null")),
-                            "error" => log.error.unwrap_or(String::from("null")),
-                            "loglevel" => log.loglevel.unwrap_or(String::from("null")),
-                            value => panic!("invalid key {}", value),
-                        },
-                        None => String::from("null"),
-                    }
-                )
-            } else {
-                panic!("no operation provided")
-            },
-        }
+        commands::log::log(&mut config, matches);
     };
     println!("config modified: {:?}", &config);
+
+    match OpenOptions::new()
+        .create(true)
+        .write(true)
+        .truncate(true)
+        .open(matches.value_of("file").unwrap())
+    {
+        Ok(file) => match serde_json::to_writer(file, &config) {
+            Ok(_) => println!("config modefied"),
+            Err(err) => panic!("serialize failed {:?}", err),
+        },
+        Err(_) => panic!("write failed"),
+    };
 }
