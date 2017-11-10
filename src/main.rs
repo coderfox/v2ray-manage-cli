@@ -1,5 +1,5 @@
 extern crate clap;
-use clap::{App, Arg, SubCommand};
+use clap::{App, Arg};
 
 use std::fs::{File, OpenOptions};
 
@@ -13,7 +13,7 @@ mod commands;
 extern crate serde_derive;
 
 fn main() {
-    let matches = App::new("v2ray manager cli")
+    let app = App::new("v2ray manager cli")
         .version("1.0")
         .author("coderfox <i@xfox.me>")
         .about("Does awesome things")
@@ -24,31 +24,9 @@ fn main() {
                 .takes_value(true)
                 .short("f")
                 .long("file"),
-        )
-        .subcommand(
-            SubCommand::with_name("log")
-                .about("controls log")
-                .version("1.0")
-                .author("coderfox <i@xfox.me>")
-                .args(&[
-                    Arg::with_name("key")
-                        .short("k")
-                        .long("key")
-                        .help("canbe `access`, `error` or `loglevel`")
-                        .takes_value(true)
-                        .required(true),
-                    Arg::with_name("set")
-                        .short("s")
-                        .long("set")
-                        .help("set a specified value of config")
-                        .takes_value(true),
-                    Arg::with_name("get")
-                        .short("g")
-                        .long("get")
-                        .help("get a specified value of config"),
-                ]),
-        )
-        .get_matches();
+        );
+    let app = commands::log::apply_subcommand(app);
+    let matches = app.get_matches();
     let mut config: config::Config = match File::open(matches.value_of("file").unwrap()) {
         Ok(file) => match serde_json::from_reader(file) {
             Ok(value) => value,

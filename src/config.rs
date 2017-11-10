@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Log {
     #[serde(skip_serializing_if = "Option::is_none")] pub access: Option<String>,
@@ -6,7 +8,10 @@ pub struct Log {
 }
 
 #[derive(Serialize, Deserialize, Default, Debug)]
-pub struct Dns {}
+pub struct Dns {
+    #[serde(skip_serializing_if = "Option::is_none")] pub hosts: Option<HashMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")] pub servers: Option<Vec<String>>,
+}
 
 #[derive(Serialize, Deserialize, Default, Debug)]
 pub struct Routing {}

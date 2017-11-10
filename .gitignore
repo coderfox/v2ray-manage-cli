@@ -1,3 +1,5 @@
+v2ray.json
+
 /target/
 **/*.rs.bk
 Cargo.lock
