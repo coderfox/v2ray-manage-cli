@@ -26,6 +26,7 @@ fn main() {
                 .long("file"),
         );
     let app = commands::log::apply_subcommand(app);
+    let app = commands::dns::apply_subcommand(app);
     let matches = app.get_matches();
     let mut config: config::Config = match File::open(matches.value_of("file").unwrap()) {
         Ok(file) => match serde_json::from_reader(file) {
@@ -43,6 +44,9 @@ fn main() {
     if let Some(ref matches) = matches.subcommand_matches("log") {
         commands::log::log(&mut config, matches);
     };
+    if let Some(ref matches) = matches.subcommand_matches("dns") {
+        commands::dns::dns(&mut config, matches);
+    }
     println!("config modified: {:?}", &config);
 
     match OpenOptions::new()
